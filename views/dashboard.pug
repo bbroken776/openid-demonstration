@@ -1,0 +1,61 @@
+extends layout
+
+block content
+  .card
+    .card-header
+      h2.card-title Dashboard protegido
+    if user
+      p.meta
+        | Estás dentro da área protegida. O ID Token foi validado, a sessão está ativa e os dados abaixo
+        |  vêm do perfil OpenID Connect devolvido pelo Google e persistido via Prisma.
+
+      ul
+        li
+          strong Nome:
+          |  #{user.name}
+        li
+          strong Email:
+          |  #{user.email}
+      if user.picture
+        p
+          img.avatar-large(src=user.picture, alt="avatar", width="96", height="96", style="margin-top:.45rem;")
+
+      .btn-row
+        a.btn.btn-primary(href="/") Página inicial
+        a.btn.btn-ghost(href="/dashboard") Atualizar
+        a.btn.btn-danger(href="/logout") Logout
+    else
+      p.meta
+        | Não há utilizador em sessão. Volta ao ecrã de login para recomeçar o fluxo OIDC.
+      .btn-row
+        a.btn.btn-primary(href="/login") Ir para Login
+
+  .card
+    .card-header
+      h2.card-title Utilizadores registados (Prisma)
+      p.card-subtitle
+        | Cada autenticação bem-sucedida deixa um rasto na base de dados: uma entrada que reflete
+        |  o fluxo OpenID Connect completo para essa conta Google.
+
+    if users && users.length
+      .table-wrapper
+        table
+          thead
+            tr
+              th ID
+              th Google ID
+              th Nome
+              th Email
+              th Criado em
+          tbody
+            each u in users
+              tr
+                td= u.id
+                td= u.googleId
+                td= u.name || '—'
+                td= u.email || '—'
+                td= u.createdAt.toISOString().slice(0,19).replace('T',' ')
+    else
+      p.meta
+        | Ainda não há outros utilizadores registados. Faz logout e autentica-te com diferentes contas Google
+        |  para ver a “matriz” de dados ganhar densidade.

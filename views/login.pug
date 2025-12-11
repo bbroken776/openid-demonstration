@@ -1,0 +1,26 @@
+extends layout
+
+block content
+  .card
+    .card-header
+      h2.card-title Iniciar sessão com Google
+    p.meta
+      | Esta app não guarda passwords. Em vez disso, delega a autenticação no Google via OpenID Connect
+      |  e recebe um ID Token assinado que comprova a tua identidade.
+
+    p.meta
+      | Ao continuar, serás redirecionado para o Google. Depois do login e consentimento, voltas aqui
+      |  com um código que é trocado por tokens de acesso e de identidade.
+
+    if !user
+      .btn-row
+        a.btn.btn-primary(href="/auth/google") ➡️ Continuar com Google
+        if showDevLogin
+          a.btn.btn-ghost(href="/dev-login") Dev login (local)
+    else
+      p.meta
+        | Já tens sessão iniciada como 
+        strong  #{user.email || user.name}.
+      .btn-row
+        a.btn.btn-primary(href="/dashboard") Ir para Dashboard
+        a.btn.btn-ghost(href="/logout") Logout

@@ -1,0 +1,17 @@
+extends layout
+
+block content
+  .card
+    .card-header
+      h2.card-title Erro na aplicação
+    p.meta
+      | Algo correu mal ao processar o teu pedido. Em modo desenvolvimento, consulta os logs do servidor
+      |  para mais detalhes técnicos.
+
+    if message
+      p
+        strong Detalhes:
+        |  #{message}
+
+    .btn-row
+      a.btn.btn-primary(href="/") Voltar à página inicial

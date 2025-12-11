@@ -1,0 +1,474 @@
+doctype html
+html(lang="pt")
+  head
+    meta(charset="utf-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1")
+    title= title || 'OpenID Connect Demo'
+    style.
+      :root {
+        --bg-main: #020617;
+        --bg-panel: rgba(15, 15, 23, 0.96);
+        --bg-panel-soft: rgba(24, 24, 33, 0.96);
+        --border-soft: rgba(148, 148, 170, 0.5);
+        --text-main: #f9fafb;
+        --text-muted: #9ca3af;
+        --accent: #ef4444;
+        --accent-soft: #f97373;
+        --accent-dark: #991b1b;
+        --grid-line: rgba(148,163,184,0.27);
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        min-height: 100vh;
+        background: radial-gradient(circle at top, #111827 0, #020617 40%, #020617 100%);
+        color: var(--text-main);
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      /* Background matrix / grid - faster and more dynamic */
+      .matrix-bg {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        overflow: hidden;
+      }
+
+      .matrix-column {
+        position: absolute;
+        top: -130%;
+        width: 2px;
+        height: 240%;
+        background: linear-gradient(
+          to bottom,
+          rgba(248, 250, 252, 0) 0%,
+          rgba(248, 250, 252, 0.2) 10%,
+          rgba(248, 113, 113, 1) 45%,
+          rgba(248, 113, 113, 0.2) 90%,
+          rgba(248, 250, 252, 0) 100%
+        );
+        box-shadow:
+          0 0 18px rgba(248, 113, 113, 0.95),
+          0 0 34px rgba(248, 113, 113, 0.7);
+        filter: blur(0.2px);
+        animation: matrix-fall 3.8s linear infinite;
+        opacity: 0.9;
+      }
+
+      .matrix-column.c1 { left: 6%;  animation-duration: 3.6s; animation-delay: -0.5s; }
+      .matrix-column.c2 { left: 18%; animation-duration: 4s;  animation-delay: -1.2s; }
+      .matrix-column.c3 { left: 32%; animation-duration: 3.4s; animation-delay: -0.8s; }
+      .matrix-column.c4 { left: 50%; animation-duration: 4.1s; animation-delay: -1.5s; }
+      .matrix-column.c5 { left: 66%; animation-duration: 3.5s; animation-delay: -2s; }
+      .matrix-column.c6 { left: 82%; animation-duration: 3.9s; animation-delay: -0.9s; }
+      .matrix-column.c7 { left: 94%; animation-duration: 3.3s; animation-delay: -1.8s; }
+
+      @keyframes matrix-fall {
+        0%   { transform: translate3d(0, -15%, 0); opacity: 0.3; }
+        20%  { opacity: 1; }
+        50%  { transform: translate3d(0, 15%, 0); opacity: 0.9; }
+        80%  { opacity: 0.7; }
+        100% { transform: translate3d(0, 45%, 0); opacity: 0.3; }
+      }
+
+      .matrix-grid {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.18;
+        background-image:
+          linear-gradient(90deg, rgba(148,163,184,0.35) 1px, transparent 1px),
+          linear-gradient(0deg, rgba(148,163,184,0.3) 1px, transparent 1px);
+        background-size: 40px 40px;
+        mix-blend-mode: screen;
+        animation: grid-pingpong 10s linear infinite alternate;
+      }
+
+      @keyframes grid-pingpong {
+        0%   { transform: translate3d(0, 0, 0); }
+        25%  { transform: translate3d(-12px, -8px, 0); }
+        50%  { transform: translate3d(10px, -14px, 0); }
+        75%  { transform: translate3d(-8px, 10px, 0); }
+        100% { transform: translate3d(8px, 12px, 0); }
+      }
+
+      /* “Ping-pong” bubbles moving inside the viewport */
+      .bubble {
+        position: fixed;
+        border-radius: 18px;
+        background: radial-gradient(circle at 20% 20%, rgba(248,250,252,0.25), rgba(127,29,29,0.9));
+        box-shadow:
+          0 18px 50px rgba(15,23,42,0.95),
+          0 0 0 1px rgba(248,250,252,0.04);
+        filter: blur(0.4px);
+        opacity: 0.55;
+        z-index: 0;
+      }
+
+      /* Cada bubble tem um “campo” diferente e animado tipo ping-pong */
+      .bubble.b1 {
+        width: 180px;
+        height: 180px;
+        top: 5%;
+        left: 5%;
+        animation: bubble-pingpong-1 9s ease-in-out infinite alternate;
+      }
+      .bubble.b2 {
+        width: 220px;
+        height: 220px;
+        bottom: 0;
+        right: 0;
+        animation: bubble-pingpong-2 11s ease-in-out infinite alternate;
+      }
+      .bubble.b3 {
+        width: 110px;
+        height: 110px;
+        top: 35%;
+        right: 10%;
+        opacity: 0.4;
+        animation: bubble-pingpong-3 7s ease-in-out infinite alternate;
+      }
+
+      /* Ping-pong style: batem nas “bordas” do ecrã e voltam */
+      @keyframes bubble-pingpong-1 {
+        0%   { transform: translate3d(0, 0, 0); }
+        25%  { transform: translate3d(40vw, 5vh, 0); }
+        50%  { transform: translate3d(55vw, 35vh, 0); }
+        75%  { transform: translate3d(20vw, 55vh, 0); }
+        100% { transform: translate3d(0, 25vh, 0); }
+      }
+
+      @keyframes bubble-pingpong-2 {
+        0%   { transform: translate3d(0, 0, 0); }
+        20%  { transform: translate3d(-35vw, -10vh, 0); }
+        40%  { transform: translate3d(-55vw, -30vh, 0); }
+        70%  { transform: translate3d(-15vw, -50vh, 0); }
+        100% { transform: translate3d(-5vw, -20vh, 0); }
+      }
+
+      @keyframes bubble-pingpong-3 {
+        0%   { transform: translate3d(0, 0, 0); }
+        30%  { transform: translate3d(-12vw, -12vh, 0); }
+        60%  { transform: translate3d(-24vw, 10vh, 0); }
+        100% { transform: translate3d(-8vw, 18vh, 0); }
+      }
+
+      .page {
+        position: relative;
+        z-index: 1;
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem 2.5rem;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.6rem;
+        gap: 1rem;
+      }
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: .8rem;
+      }
+      .header-logo {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background:
+          radial-gradient(circle at 25% 20%, #fee2e2 0, #b91c1c 35%, #020617 95%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fef2f2;
+        font-weight: 700;
+        font-size: 1.02rem;
+        box-shadow:
+          0 0 22px rgba(248, 113, 113, 0.55),
+          0 0 0 1px rgba(248, 250, 252, 0.08);
+      }
+      .header-text {
+        display: flex;
+        flex-direction: column;
+        gap: .08rem;
+      }
+      .header-title {
+        font-size: 1.3rem;
+        font-weight: 580;
+        letter-spacing: .03em;
+      }
+      .header-subtitle {
+        font-size: .8rem;
+        color: var(--text-muted);
+      }
+
+      header .user {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+      }
+      header img {
+        width: 34px;
+        height: 34px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 1px solid rgba(248,250,252,0.15);
+        box-shadow: 0 12px 26px rgba(15,23,42,0.95);
+      }
+      .user-main {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: .05rem;
+      }
+      .user-main-name {
+        font-size: .86rem;
+        font-weight: 520;
+      }
+      .user-main-email {
+        font-size: .78rem;
+        color: var(--text-muted);
+      }
+      .link-small {
+        font-size: .78rem;
+        color: var(--accent-soft);
+        text-decoration: none;
+      }
+      .link-small:hover {
+        text-decoration: underline;
+      }
+
+      .card {
+        background: linear-gradient(135deg, var(--bg-panel), var(--bg-panel-soft));
+        border-radius: 10px;
+        border: 1px solid var(--border-soft);
+        padding: 1.25rem 1.2rem;
+        margin-bottom: 1.2rem;
+        box-shadow:
+          0 20px 45px rgba(15,23,42,0.95),
+          0 0 0 1px rgba(15,23,42,0.9);
+        backdrop-filter: blur(14px);
+      }
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: .6rem;
+        gap: .5rem;
+      }
+      .card-title {
+        font-size: 1.02rem;
+        font-weight: 560;
+      }
+      .card-subtitle,
+      .meta {
+        font-size: .84rem;
+        color: var(--text-muted);
+        margin-top: .2rem;
+      }
+
+      .btn-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .55rem;
+        margin-top: .9rem;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .35rem;
+        padding: .5rem 1.05rem;
+        border-radius: 8px;
+        border: 1px solid rgba(148,163,184,0.6);
+        background: radial-gradient(circle at 0 0, rgba(248,113,113,0.16), rgba(15,23,42,0.95));
+        color: var(--text-main);
+        cursor: pointer;
+        font-size: .86rem;
+        font-weight: 500;
+        text-decoration: none;
+        min-width: 0;
+        box-shadow: 0 12px 28px rgba(15,23,42,0.95);
+        transition: transform .12s ease-out,
+                    box-shadow .12s ease-out,
+                    border-color .12s ease-out,
+                    background .12s ease-out;
+      }
+      .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 18px 34px rgba(15,23,42,1);
+        border-color: rgba(248,250,252,0.3);
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent-soft));
+        border-color: rgba(248,113,113,0.9);
+        box-shadow: 0 16px 32px rgba(248,113,113,0.35);
+      }
+      .btn-primary:hover {
+        background: linear-gradient(135deg, #fb7185, var(--accent));
+      }
+      .btn-ghost {
+        background: radial-gradient(circle at 0 0, rgba(148,163,184,0.18), rgba(15,23,42,0.98));
+      }
+      .btn-danger {
+        background: linear-gradient(135deg, var(--accent-dark), #7f1d1d);
+        border-color: rgba(248,113,113,0.85);
+        color: #fee2e2;
+      }
+
+      ol {
+        padding-left: 1.1rem;
+        margin-top: .45rem;
+      }
+      ol li {
+        margin-bottom: .28rem;
+        font-size: .9rem;
+      }
+      ul {
+        padding-left: 1.05rem;
+        margin-top: .3rem;
+      }
+      ul li {
+        margin-bottom: .22rem;
+        font-size: .9rem;
+      }
+      strong { font-weight: 550; }
+
+      .table-wrapper {
+        margin-top: .7rem;
+        border-radius: 10px;
+        border: 1px solid rgba(148,163,184,0.45);
+        overflow: hidden;
+        background: rgba(15,23,42,0.98);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .82rem;
+      }
+      th, td {
+        padding: .45rem .6rem;
+        text-align: left;
+        white-space: nowrap;
+      }
+      th {
+        background: linear-gradient(180deg, rgba(15,23,42,0.98), rgba(15,23,42,0.9));
+        font-weight: 520;
+        color: var(--text-muted);
+        font-size: .78rem;
+        border-bottom: 1px solid rgba(148,163,184,0.6);
+      }
+      td {
+        border-top: 1px solid rgba(51,65,85,0.7);
+        color: #e5e7eb;
+      }
+      tr:nth-child(even) td {
+        background: rgba(15,23,42,0.96);
+      }
+
+      .avatar-large {
+        border-radius: 10px;
+        border: 1px solid rgba(248,250,252,0.25);
+        box-shadow: 0 18px 42px rgba(15,23,42,0.98);
+      }
+
+      /* Mobile adjustments */
+      @media (max-width: 768px) {
+        .page {
+          padding: 1.1rem .9rem 2rem;
+        }
+
+        header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: .7rem;
+        }
+
+        .header-title {
+          font-size: 1.15rem;
+        }
+
+        .header-subtitle {
+          font-size: .78rem;
+        }
+
+        header .user {
+          align-self: stretch;
+          justify-content: space-between;
+        }
+
+        .card {
+          padding: 1rem .9rem;
+        }
+
+        .btn-row {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .btn {
+          width: 100%;
+          justify-content: center;
+        }
+
+        ol li,
+        ul li {
+          font-size: .86rem;
+        }
+
+        .matrix-grid {
+          opacity: 0.14;
+        }
+        .bubble {
+          opacity: 0.45;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .page {
+          padding: 1rem .7rem 1.8rem;
+        }
+        .header-title {
+          font-size: 1.05rem;
+        }
+        .card-title {
+          font-size: .98rem;
+        }
+      }
+
+  body
+    .matrix-bg
+      .matrix-column.c1
+      .matrix-column.c2
+      .matrix-column.c3
+      .matrix-column.c4
+      .matrix-column.c5
+      .matrix-column.c6
+      .matrix-column.c7
+    .matrix-grid
+    .bubble.b1
+    .bubble.b2
+    .bubble.b3
+    .page
+      header
+        .header-left
+          .header-logo O
+          .header-text
+            div.header-title OpenID Connect · Google
+            div.header-subtitle Fluxo de dados, tokens e sessão explicados visualmente
+        if user
+          .user
+            if user.picture
+              img(src=user.picture, alt="avatar")
+            .user-main
+              .user-main-name= user.name || user.email
+              .user-main-email= user.email
+              a.link-small(href="/logout") Terminar sessão
+        else
+          a.link-small(href="/login") Iniciar sessão
+      block content

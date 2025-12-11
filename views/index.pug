@@ -1,0 +1,34 @@
+extends layout
+
+block content
+  .card
+    .card-header
+      h2.card-title Visão geral do fluxo OpenID Connect
+    p.meta
+      | Esta página descreve, passo a passo, o que acontece quando clicas em “Login com Google”:
+      |  o browser fala com esta app, esta app fala com o Google e os tokens fluem de volta.
+
+    ol
+      li O browser chama esta aplicação e inicia o redirecionamento para o Google (OpenID Provider).
+      li O Google autentica-te, pede consentimento e prepara um ID Token com a tua identidade.
+      li Um código de autorização efémero é enviado de volta para o backend desta app.
+      li O backend troca esse código por tokens (Access Token + ID Token) através de canais seguros.
+      li A aplicação valida o ID Token, cria/atualiza o utilizador na base de dados (Prisma) e abre uma sessão.
+      li A partir daí, cada pedido traz um cookie de sessão e dá-te acesso ao dashboard protegido.
+
+    p.meta
+      | Em termos de papéis: esta app é o Relying Party (RP) e o Google é o OpenID Provider (OP).
+      |  O background animado representa esse fluxo contínuo de dados entre browser, OP e RP.
+
+    if !user
+      .btn-row
+        a.btn.btn-primary(href="/auth/google") ➡️ Login com Google
+        if showDevLogin
+          a.btn.btn-ghost(href="/dev-login") Dev login (local)
+    else
+      p.meta
+        | Sessão ativa como 
+        strong  #{user.email || user.name}.
+      .btn-row
+        a.btn.btn-primary(href="/dashboard") 🔐 Ir para Dashboard
+        a.btn.btn-ghost(href="/logout") Logout
